@@ -1,0 +1,531 @@
+<!-- templates/404.html -->
+{% extends "base.html" %}
+
+{% block title %}页面不存在 - 待办事项管理器{% endblock %}
+
+{% block content %}
+<div class="error-page">
+    <!-- 错误图标 -->
+    <div class="error-icon">
+        <i class="fas fa-exclamation-triangle fa-3x"></i>
+    </div>
+    
+    <!-- 错误标题 -->
+    <h2>404 - 页面未找到</h2>
+    
+    <!-- 错误描述 -->
+    <p>抱歉，您访问的页面不存在或已被移除。</p>
+    
+    <!-- 显示当前访问的错误路径 -->
+    <div class="error-details">
+        <p><small>访问路径: <code id="error-path">{{ request.path }}</code></small></p>
+        <p><small>时间: <span id="error-time"></span></small></p>
+    </div>
+    
+    <!-- 主要操作按钮 -->
+    <div class="action-buttons">
+        <a href="{{ url_for('index') }}" class="btn btn-primary">
+            <i class="fas fa-home"></i> 返回首页
+        </a>
+        
+        <button onclick="history.back()" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> 返回上一页
+        </button>
+        
+        <!-- 修改：改为"关闭表单"按钮 -->
+        <button onclick="toggleReportForm()" class="btn btn-info" id="form-toggle-btn">
+            <i class="fas fa-times"></i> 关闭问题表单
+        </button>
+    </div>
+    
+    <!-- 常见问题帮助 -->
+    <div class="help-section">
+        <h4><i class="fas fa-question-circle"></i> 可能的原因：</h4>
+        <ul>
+            <li>网址输入错误</li>
+            <li>页面已被删除或移动</li>
+            <li>链接已过期失效</li>
+            <li>网络连接问题</li>
+        </ul>
+        
+        <!-- 添加引导用户填写表单的提示 -->
+        <div class="form-prompt" style="margin-top: 15px; padding: 10px; background: #e7f3ff; border-radius: 5px;">
+            <p style="margin: 0;"><i class="fas fa-info-circle"></i> 
+                <strong>帮助我们改进：</strong> 
+                如果您遇到了问题，请填写下面的表单告诉我们。您的反馈对我们非常重要！
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- 问题报告表单（修改：默认显示，移除 display: none） -->
+<div id="report-modal" class="report-modal">
+    <!-- 移除 style="display: none;" -->
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-bug"></i> 报告问题</h3>
+            <small class="text-muted">请帮助我们改进网站体验</small>
+        </div>
+        
+        <div class="modal-body">
+            <p>您遇到了 <code>404</code> 错误。请描述具体情况，帮助我们定位问题：</p>
+            
+            <form id="problem-report-form">
+                <!-- 自动填充的信息 -->
+                <input type="hidden" id="error_url" name="error_url" value="{{ request.path }}">
+                <input type="hidden" id="user_agent" name="user_agent">
+                <input type="hidden" id="timestamp" name="timestamp">
+                
+                <!-- 问题类型选择 -->
+                <div class="form-group">
+                    <label for="problem_type">问题类型：</label>
+                    <select id="problem_type" name="problem_type" class="form-control">
+                        <option value="404_not_found" selected>页面不存在（404）</option>
+                        <option value="broken_link">链接失效</option>
+                        <option value="wrong_redirect">错误的重定向</option>
+                        <option value="other">其他问题</option>
+                    </select>
+                </div>
+                
+                <!-- 您原本想访问什么？ -->
+                <div class="form-group">
+                    <label for="intended_page">您原本想访问什么内容？</label>
+                    <input type="text" id="intended_page" name="intended_page" 
+                           placeholder="例如：任务列表、特定任务、设置页面等" 
+                           class="form-control">
+                </div>
+                
+                <!-- 如何找到这个链接的？ -->
+                <div class="form-group">
+                    <label for="how_found">您是如何找到这个链接的？</label>
+                    <select id="how_found" name="how_found" class="form-control">
+                        <option value="">请选择...</option>
+                        <option value="bookmark">书签/收藏夹</option>
+                        <option value="search_engine">搜索引擎</option>
+                        <option value="shared_link">他人分享的链接</option>
+                        <option value="email">邮件中的链接</option>
+                        <option value="typed">手动输入网址</option>
+                        <option value="other_source">其他来源</option>
+                    </select>
+                </div>
+                
+                <!-- 问题描述 -->
+                <div class="form-group">
+                    <label for="description">问题详细描述：</label>
+                    <textarea id="description" name="description" 
+                              rows="4" placeholder="请详细描述您遇到的问题... 
+例如：1. 您从哪个页面点击过来的？
+     2. 您原本期望看到什么？
+     3. 您认为问题出在哪里？" 
+                              class="form-control" required></textarea>
+                </div>
+                
+                <!-- 联系邮箱（可选） -->
+                <div class="form-group">
+                    <label for="email">联系邮箱（可选，如需回复请填写）：</label>
+                    <input type="email" id="email" name="email" 
+                           placeholder="your-email@example.com" class="form-control">
+                </div>
+                
+                <!-- 提交按钮 -->
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">
+                        <i class="fas fa-paper-plane"></i> 提交问题报告
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="modal-footer">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle"></i> 
+                    您的反馈将帮助我们改进网站体验
+                </small>
+                <button onclick="toggleReportForm()" class="btn btn-sm btn-secondary">
+                    <i class="fas fa-eye-slash"></i> 暂时隐藏表单
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 成功提交后的感谢信息 -->
+<div id="thank-you-message" class="alert alert-success" style="display: none; position: fixed; top: 20px; right: 20px; z-index: 1000;">
+    <i class="fas fa-check-circle"></i> 感谢您的反馈！我们会尽快处理。
+</div>
+
+<!-- 页面特定的CSS样式 -->
+<style>
+/* 错误详情样式 */
+.error-details {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    margin: 15px 0;
+    font-size: 0.9rem;
+}
+
+.error-details code {
+    background: #e9ecef;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #dc3545;
+    font-family: monospace;
+}
+
+/* 操作按钮样式 */
+.action-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin: 25px 0;
+    flex-wrap: wrap;
+}
+
+/* 帮助区域样式 */
+.help-section {
+    margin-top: 25px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    text-align: left;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.help-section h4 {
+    color: #6c757d;
+    margin-bottom: 12px;
+    font-size: 1.1rem;
+}
+
+.help-section ul {
+    padding-left: 20px;
+    color: #6c757d;
+    margin-bottom: 0;
+}
+
+.help-section li {
+    margin-bottom: 5px;
+}
+
+/* 修改：模态框样式 - 默认显示，改为常规布局 */
+.report-modal {
+    /* 移除 fixed 定位，改为正常文档流 */
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    margin: 30px auto;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid #dee2e6;
+}
+
+/* 移除覆盖层样式 */
+.report-modal:not(.hidden) {
+    display: block; /* 默认显示 */
+}
+
+/* 添加隐藏状态 */
+.report-modal.hidden {
+    display: none;
+}
+
+/* 修改模态框内容样式 */
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 100%;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 20px 25px;
+    border-bottom: 1px solid #dee2e6;
+    background: linear-gradient(to right, #f8f9fa, #e9ecef);
+    border-radius: 12px 12px 0 0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #333;
+    font-size: 1.4rem;
+}
+
+.modal-header .text-muted {
+    margin-top: 5px;
+    font-size: 0.9rem;
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+.modal-footer {
+    padding: 15px 25px;
+    border-top: 1px solid #dee2e6;
+    background: #f8f9fa;
+    border-radius: 0 0 12px 12px;
+}
+
+/* 表单样式 */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #4a6fa5;
+    box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.1);
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 25px;
+}
+
+/* 提交成功消息 */
+#thank-you-message {
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* 表单提示框 */
+.form-prompt {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(74, 111, 165, 0.1); }
+    70% { box-shadow: 0 0 0 10px rgba(74, 111, 165, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(74, 111, 165, 0); }
+}
+</style>
+
+<!-- JavaScript 功能 -->
+<script>
+// 页面加载完成后执行
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('404页面加载完成 - 问题表单默认显示');
+    
+    // 设置当前时间
+    const now = new Date();
+    document.getElementById('error-time').textContent = 
+        now.toLocaleString('zh-CN', { 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+    
+    // 设置隐藏字段的值
+    document.getElementById('timestamp').value = now.toISOString();
+    document.getElementById('user_agent').value = navigator.userAgent;
+    
+    // 自动填充描述字段（提供模板）
+    const descriptionField = document.getElementById('description');
+    if (!descriptionField.value) {
+        descriptionField.value = `我访问了 "${window.location.pathname}" 但页面不存在。
+
+我原本想访问：
+${document.getElementById('intended_page').value || '[请填写您原本想访问的内容]'}
+
+我是通过以下方式找到这个链接的：
+${document.getElementById('how_found').value ? document.getElementById('how_found').selectedOptions[0].text : '[请选择]'}
+
+其他相关信息：`;
+    }
+    
+    // 自动聚焦到第一个输入框
+    document.getElementById('intended_page').focus();
+    
+    // 监听表单提交
+    document.getElementById('problem-report-form').addEventListener('submit', function(e) {
+        e.preventDefault(); // 阻止默认表单提交
+        
+        // 收集表单数据
+        const formData = {
+            error_url: document.getElementById('error_url').value,
+            user_agent: document.getElementById('user_agent').value,
+            timestamp: document.getElementById('timestamp').value,
+            problem_type: document.getElementById('problem_type').value,
+            intended_page: document.getElementById('intended_page').value,
+            how_found: document.getElementById('how_found').value,
+            description: document.getElementById('description').value,
+            email: document.getElementById('email').value || '未提供',
+            page_url: window.location.href,
+            referrer: document.referrer || '直接访问'
+        };
+        
+        console.log('问题报告数据:', formData);
+        
+        // 显示提交中状态
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 提交中...';
+        submitBtn.disabled = true;
+        
+        // 模拟提交到服务器（实际开发中应发送到后端）
+        // 替换模拟提交的 setTimeout
+fetch('/api/report-problem', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(formData)
+})
+.then(response => response.json())
+.then(data => {
+    if (data.success) {
+        showThankYouMessage();
+        saveReportToLocal(formData);
+    } else {
+        alert('提交失败: ' + data.message);
+    }
+})
+.catch(error => {
+    console.error('提交失败:', error);
+    alert('网络错误，已保存到本地');
+});
+    });
+});
+
+/**
+ * 切换显示/隐藏问题报告表单
+ */
+function toggleReportForm() {
+    const modal = document.getElementById('report-modal');
+    const toggleBtn = document.getElementById('form-toggle-btn');
+    
+    if (modal.classList.contains('hidden')) {
+        // 显示表单
+        modal.classList.remove('hidden');
+        toggleBtn.innerHTML = '<i class="fas fa-times"></i> 关闭问题表单';
+        toggleBtn.classList.remove('btn-secondary');
+        toggleBtn.classList.add('btn-info');
+        
+        // 为无障碍访问设置焦点
+        setTimeout(() => {
+            document.getElementById('intended_page').focus();
+        }, 100);
+        
+        console.log('问题表单已显示');
+    } else {
+        // 隐藏表单
+        modal.classList.add('hidden');
+        toggleBtn.innerHTML = '<i class="fas fa-bug"></i> 显示问题表单';
+        toggleBtn.classList.remove('btn-info');
+        toggleBtn.classList.add('btn-secondary');
+        
+        console.log('问题表单已隐藏');
+    }
+}
+
+/**
+ * 显示感谢信息
+ */
+function showThankYouMessage() {
+    const message = document.getElementById('thank-you-message');
+    message.style.display = 'flex';
+    
+    // 3秒后自动隐藏
+    setTimeout(() => {
+        message.style.display = 'none';
+    }, 3000);
+}
+
+/**
+ * 保存报告到本地存储（作为备份）
+ */
+function saveReportToLocal(reportData) {
+    try {
+        // 获取已有的报告
+        const existingReports = JSON.parse(localStorage.getItem('problem_reports') || '[]');
+        
+        // 添加新报告
+        existingReports.push({
+            ...reportData,
+            local_saved_at: new Date().toISOString()
+        });
+        
+        // 保存回本地存储（最多保存20条）
+        const toSave = existingReports.slice(-20);
+        localStorage.setItem('problem_reports', JSON.stringify(toSave));
+        
+        console.log('问题报告已保存到本地存储');
+    } catch (error) {
+        console.warn('无法保存到本地存储:', error);
+    }
+}
+
+/**
+ * 导出所有本地报告（调试用）
+ */
+function exportLocalReports() {
+    try {
+        const reports = JSON.parse(localStorage.getItem('problem_reports') || '[]');
+        console.log('本地存储的问题报告:', reports);
+        return reports;
+    } catch (error) {
+        console.error('导出失败:', error);
+        return [];
+    }
+}
+
+// 暴露给全局，方便调试
+window.exportLocalReports = exportLocalReports;
+window.toggleReportForm = toggleReportForm;
+
+// 页面加载后自动滚动到表单区域（可选）
+window.addEventListener('load', function() {
+    // 延迟滚动，让页面完全加载
+    setTimeout(() => {
+        const formElement = document.getElementById('report-modal');
+        if (formElement) {
+            formElement.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+            });
+        }
+    }, 500);
+});
+</script>
+{% endblock %}
